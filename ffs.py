@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+from sklearn.decomposition import NMF
 
 '''
 Solving the MDP problem of New York Yellow taxi data using feature-based RL 
@@ -256,6 +257,17 @@ def TFFS(k):
     return phi
 
 
+def NMF_mtd(k):
+
+    Phi = np.zeros((n_actions, n_states, k))
+    model = NMF(n_components=k, init='random', random_state=0)
+    for a in range(n_actions):
+        W = model.fit_transform(trn_mtx_a[a, :, :])
+        Phi[a, :, :] = W
+    Phi = Phi.reshape((Phi.shape[1], Phi.shape[0], Phi.shape[2]))
+    return Phi
+
+
 # Evaluate policy
 def eval_policy_lstd(phi, w):
     V = np.zeros(n_states)
@@ -310,7 +322,6 @@ def lstd(phi, p, r, k):
         max_iter += 1
 
         w = np.linalg.pinv(B).dot(b)
-        print(max_iter)
 
         if np.sum(prev_w - w) >= threshold and max_iter < 10:
             prev_w = w
@@ -318,8 +329,15 @@ def lstd(phi, p, r, k):
             return V
 
 
+
 # considering 27 features
 k = 27
 Phi = TFFS(k)
+
+V = lstd(Phi, trn_mtx_a.reshape((trn_mtx_a.shape[1], trn_mtx_a.shape[0], trn_mtx_a.shape[2])), reward, k)
+print(sum(V) / len(V))
+
+Phi = NMF_mtd(k)
+
 V = lstd(Phi, trn_mtx_a.reshape((trn_mtx_a.shape[1], trn_mtx_a.shape[0], trn_mtx_a.shape[2])), reward, k)
 print(sum(V) / len(V))
